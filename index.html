@@ -2,21 +2,27 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Fund Tracker</title>
+  <title>Fund Tracker with Chart</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; }
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 50px auto; }
     h1 { text-align: center; color: #2E8B57; }
     input, select, button { padding: 5px; margin: 5px; }
     ul { list-style-type: none; padding-left: 0; }
     li.donation { color: green; }
     li.expense { color: red; }
-    #balance { font-weight: bold; font-size: 1.2em; }
+    #totals { font-weight: bold; font-size: 1.2em; margin-bottom: 20px; }
+    #chart-container { max-width: 400px; margin: auto; }
   </style>
 </head>
 <body>
   <h1>Fund Tracker</h1>
 
-  <p>Total Balance: $<span id="balance">0</span></p>
+  <div id="totals">
+    Total Donations: $<span id="total-donations">0</span> | 
+    Total Expenses: $<span id="total-expenses">0</span> | 
+    Balance: $<span id="balance">0</span>
+  </div>
 
   <input type="number" id="amount" placeholder="Amount" />
   <select id="type">
@@ -29,22 +35,36 @@
   <h2>Transactions</h2>
   <ul id="list"></ul>
 
+  <div id="chart-container">
+    <canvas id="fundChart"></canvas>
+  </div>
+
   <script>
-    let balance = 0;
     let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 
     function updateDisplay() {
+      let totalDonations = 0;
+      let totalExpenses = 0;
       document.getElementById('list').innerHTML = '';
-      balance = 0;
+
       transactions.forEach(tx => {
         const li = document.createElement('li');
         li.className = tx.type;
         li.textContent = `${tx.type === 'donation' ? '+' : '-'} $${tx.amount} — ${tx.desc}`;
         document.getElementById('list').appendChild(li);
-        balance += tx.type === 'donation' ? tx.amount : -tx.amount;
+
+        if(tx.type === 'donation') totalDonations += tx.amount;
+        else totalExpenses += tx.amount;
       });
+
+      const balance = totalDonations - totalExpenses;
+
+      document.getElementById('total-donations').textContent = totalDonations;
+      document.getElementById('total-expenses').textContent = totalExpenses;
       document.getElementById('balance').textContent = balance;
+
       localStorage.setItem('transactions', JSON.stringify(transactions));
+      updateChart(totalDonations, totalExpenses);
     }
 
     function addTransaction() {
@@ -52,12 +72,35 @@
       const type = document.getElementById('type').value;
       const desc = document.getElementById('desc').value || "No description";
 
-      if (amount <= 0) return alert("Enter a valid amount");
+      if(amount <= 0) return alert("Enter a valid amount");
 
       transactions.push({ amount, type, desc });
       document.getElementById('amount').value = '';
       document.getElementById('desc').value = '';
       updateDisplay();
+    }
+
+    // Chart.js setup
+    const ctx = document.getElementById('fundChart').getContext('2d');
+    const fundChart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ['Donations', 'Expenses'],
+        datasets: [{
+          label: 'Fund',
+          data: [0, 0],
+          backgroundColor: ['#2E8B57', '#FF4C4C'],
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+
+    function updateChart(donations, expenses) {
+      fundChart.data.datasets[0].data = [donations, expenses];
+      fundChart.update();
     }
 
     updateDisplay();
