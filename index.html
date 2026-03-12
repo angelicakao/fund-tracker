@@ -1,137 +1,168 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Donation Tracker by Division</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; }
-    h1 { text-align: center; color: #2E8B57; }
-    input, select, button { padding: 5px; margin: 5px; }
-    ul { list-style-type: none; padding-left: 0; max-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
-    li { margin-bottom: 4px; }
-    #totals { font-weight: bold; font-size: 1.2em; margin-bottom: 20px; }
-    #chart-container { max-width: 800px; margin: 30px auto; }
-  </style>
+<meta charset="UTF-8">
+<title>Division Donation Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+font-family:Arial;
+max-width:900px;
+margin:40px auto;
+}
+
+h1{
+text-align:center;
+color:#2E8B57;
+}
+
+#controls{
+text-align:center;
+margin-bottom:30px;
+}
+
+#chart-container{
+max-width:800px;
+margin:auto;
+}
+
+select{
+padding:8px;
+font-size:16px;
+}
+
+</style>
 </head>
+
 <body>
-  <h1>Donation Tracker by Division</h1>
 
-  <div id="totals">
-    Total Donations: $<span id="total-donations">0</span>
-  </div>
+<h1>Division Donation Dashboard</h1>
 
-  <input type="number" id="amount" placeholder="Amount" />
-  <select id="division">
-    <option value="">Select Division</option>
-    <option value="ASO/DO">ASO/DO</option>
-    <option value="BREG">BREG</option>
-    <option value="DFI">DFI</option>
-    <option value="INS">INS</option>
-    <option value="OAH">OAH</option>
-    <option value="OCP">OCP</option>
-    <option value="PUC">PUC</option>
-    <option value="PVL">PVL</option>
-    <option value="RICO">RICO</option>
-    <option value="KKB">KKB</option>
-    <option value="WFC">WFC</option>
-  </select>
+<div id="controls">
+Select Date:
+<select id="dateSelect"></select>
+</div>
 
-  <input type="date" id="donationDate" />
-  <button onclick="addDonation()">Add Donation</button>
+<div id="chart-container">
+<canvas id="donationChart"></canvas>
+</div>
 
-  <h2>Transactions</h2>
-  <ul id="list"></ul>
+<script>
 
-  <div id="chart-container">
-    <canvas id="donationChart"></canvas>
-  </div>
+const divisions=[
+"ASO/DO","BREG","DFI","INS","OAH",
+"OCP","PUC","PVL","RICO","KKB","WFC"
+];
 
-  <script>
-    const divisions = ["ASO/DO","BREG","DFI","INS","OAH","OCP","PUC","PVL","RICO","KKB","WFC"];
 
-    // --- Preloaded donation numbers (can be changed here) ---
-    let transactions = [
-      {amount: 500, division: "ASO/DO", date: "2026-03-01"},
-      {amount: 300, division: "BREG", date: "2026-03-02"},
-      {amount: 200, division: "DFI", date: "2026-03-03"},
-      {amount: 400, division: "INS", date: "2026-03-04"},
-      {amount: 150, division: "OAH", date: "2026-03-04"},
-      {amount: 250, division: "OCP", date: "2026-03-05"}
-    ];
+// ===== ENTER DONATION TOTALS HERE =====
 
-    // Save preloaded numbers to localStorage if empty
-    if(!localStorage.getItem('transactions')) {
-      localStorage.setItem('transactions', JSON.stringify(transactions));
-    } else {
-      transactions = JSON.parse(localStorage.getItem('transactions'));
-    }
+const donationData=[
 
-    function updateDisplay() {
-      let totals = {};
-      divisions.forEach(div => totals[div] = 0);
+{
+date:"2026-03-01",
+totals:{
+"ASO/DO":500,
+"BREG":300,
+"DFI":200,
+"INS":400,
+"OAH":100,
+"OCP":150
+}
+},
 
-      document.getElementById('list').innerHTML = '';
+{
+date:"2026-03-05",
+totals:{
+"ASO/DO":800,
+"BREG":450,
+"DFI":350,
+"INS":500,
+"OAH":200,
+"OCP":300,
+"PUC":150
+}
+},
 
-      transactions.forEach(tx => {
-        totals[tx.division] += tx.amount;
-        const li = document.createElement('li');
-        li.textContent = `[${tx.date}] $${tx.amount} → ${tx.division}`;
-        document.getElementById('list').appendChild(li);
-      });
+{
+date:"2026-03-10",
+totals:{
+"ASO/DO":1000,
+"BREG":700,
+"DFI":450,
+"INS":750,
+"OAH":350,
+"OCP":400,
+"PUC":300,
+"PVL":200
+}
+}
 
-      const totalDonations = transactions.reduce((sum, tx) => sum + tx.amount, 0);
-      document.getElementById('total-donations').textContent = totalDonations;
+];
 
-      localStorage.setItem('transactions', JSON.stringify(transactions));
-      updateChart(totals);
-    }
+// ===== Populate Date Dropdown =====
 
-    function addDonation() {
-      const amount = Number(document.getElementById('amount').value);
-      const division = document.getElementById('division').value;
-      const date = document.getElementById('donationDate').value;
+const dateSelect=document.getElementById("dateSelect");
 
-      if(amount <= 0) return alert("Enter a valid amount");
-      if(!division) return alert("Select a division");
-      if(!date) return alert("Select a date");
+donationData.forEach((entry,i)=>{
+const option=document.createElement("option");
+option.value=i;
+option.textContent=entry.date;
+dateSelect.appendChild(option);
+});
 
-      transactions.push({amount, division, date});
-      document.getElementById('amount').value = '';
-      document.getElementById('division').value = '';
-      document.getElementById('donationDate').value = '';
 
-      updateDisplay();
-    }
+// ===== Chart Setup =====
 
-    // Chart.js setup - horizontal bar
-    const ctx = document.getElementById('donationChart').getContext('2d');
-    const donationChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: divisions,
-        datasets: [{
-          label: 'Donations by Division',
-          data: new Array(divisions.length).fill(0),
-          backgroundColor: [
-            '#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40','#66FF66','#FF66B2','#B266FF','#66FFFF','#FF6666'
-          ],
-        }]
-      },
-      options: {
-        indexAxis: 'y', // horizontal bars
-        responsive: true,
-        plugins: { legend: { position: 'bottom' } },
-        scales: { x: { beginAtZero: true } }
-      }
-    });
+const ctx=document.getElementById("donationChart");
 
-    function updateChart(totals) {
-      donationChart.data.datasets[0].data = divisions.map(div => totals[div]);
-      donationChart.update();
-    }
+const chart=new Chart(ctx,{
+type:"bar",
+data:{
+labels:divisions,
+datasets:[{
+label:"Donations by Division",
+data:new Array(divisions.length).fill(0),
+backgroundColor:"#36A2EB"
+}]
+},
+options:{
+indexAxis:'y',
+responsive:true,
+scales:{
+x:{beginAtZero:true}
+}
+}
+});
 
-    updateDisplay();
-  </script>
+
+// ===== Update Chart When Date Changes =====
+
+function updateChart(index){
+
+const entry=donationData[index];
+
+const values=divisions.map(div=>{
+return entry.totals[div] || 0;
+});
+
+chart.data.datasets[0].data=values;
+
+chart.update();
+
+}
+
+dateSelect.addEventListener("change",()=>{
+updateChart(dateSelect.value);
+});
+
+
+// Load first date initially
+updateChart(0);
+
+</script>
+
 </body>
 </html>
