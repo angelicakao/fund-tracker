@@ -56,6 +56,21 @@ const divisions=[
 "OCP","PUC","PVL","RICO","KKB","WFC"
 ];
 
+// Color for each division
+const divisionColors=[
+"#ff6384",
+"#36a2eb",
+"#ffcd56",
+"#4bc0c0",
+"#9966ff",
+"#ff9f40",
+"#8dd17e",
+"#f67019",
+"#00a950",
+"#c9cbcf",
+"#b366ff"
+];
+
 
 // ===== ENTER DONATION TOTALS HERE =====
 
@@ -102,8 +117,8 @@ totals:{
 
 ];
 
-// ===== Populate Date Dropdown =====
 
+// Populate Date Dropdown
 const dateSelect=document.getElementById("dateSelect");
 
 donationData.forEach((entry,i)=>{
@@ -114,8 +129,7 @@ dateSelect.appendChild(option);
 });
 
 
-// ===== Chart Setup =====
-
+// Chart Setup
 const ctx=document.getElementById("donationChart");
 
 const chart=new Chart(ctx,{
@@ -125,12 +139,15 @@ labels:divisions,
 datasets:[{
 label:"Donations by Division",
 data:new Array(divisions.length).fill(0),
-backgroundColor:"#36A2EB"
+backgroundColor:divisionColors
 }]
 },
 options:{
 indexAxis:'y',
 responsive:true,
+plugins:{
+legend:{display:false}
+},
 scales:{
 x:{beginAtZero:true}
 }
@@ -138,8 +155,7 @@ x:{beginAtZero:true}
 });
 
 
-// ===== Update Chart When Date Changes =====
-
+// Update Chart When Date Changes
 function updateChart(index){
 
 const entry=donationData[index];
@@ -149,7 +165,6 @@ return entry.totals[div] || 0;
 });
 
 chart.data.datasets[0].data=values;
-
 chart.update();
 
 }
@@ -159,7 +174,7 @@ updateChart(dateSelect.value);
 });
 
 
-// Load first date initially
+// Load first date
 updateChart(0);
 
 </script>
