@@ -5,13 +5,13 @@
   <title>Donation Tracker by Division</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; }
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; }
     h1 { text-align: center; color: #2E8B57; }
     input, select, button { padding: 5px; margin: 5px; }
     ul { list-style-type: none; padding-left: 0; }
     li { margin-bottom: 4px; }
     #totals { font-weight: bold; font-size: 1.2em; margin-bottom: 20px; }
-    #chart-container { max-width: 500px; margin: 20px auto; }
+    #chart-container { max-width: 800px; margin: 30px auto; }
   </style>
 </head>
 <body>
@@ -86,10 +86,10 @@
       updateDisplay();
     }
 
-    // Chart.js setup
+    // Chart.js setup - horizontal bar
     const ctx = document.getElementById('donationChart').getContext('2d');
     const donationChart = new Chart(ctx, {
-      type: 'pie',
+      type: 'bar',
       data: {
         labels: divisions,
         datasets: [{
@@ -101,8 +101,10 @@
         }]
       },
       options: {
+        indexAxis: 'y', // horizontal bars
         responsive: true,
-        plugins: { legend: { position: 'bottom' } }
+        plugins: { legend: { position: 'bottom' } },
+        scales: { x: { beginAtZero: true } }
       }
     });
 
