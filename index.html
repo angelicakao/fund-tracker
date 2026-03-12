@@ -8,7 +8,7 @@
     body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; }
     h1 { text-align: center; color: #2E8B57; }
     input, select, button { padding: 5px; margin: 5px; }
-    ul { list-style-type: none; padding-left: 0; }
+    ul { list-style-type: none; padding-left: 0; max-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
     li { margin-bottom: 4px; }
     #totals { font-weight: bold; font-size: 1.2em; margin-bottom: 20px; }
     #chart-container { max-width: 800px; margin: 30px auto; }
@@ -36,6 +36,8 @@
     <option value="KKB">KKB</option>
     <option value="WFC">WFC</option>
   </select>
+
+  <input type="date" id="donationDate" />
   <button onclick="addDonation()">Add Donation</button>
 
   <h2>Transactions</h2>
@@ -47,7 +49,23 @@
 
   <script>
     const divisions = ["ASO/DO","BREG","DFI","INS","OAH","OCP","PUC","PVL","RICO","KKB","WFC"];
-    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+    // --- Preloaded donation numbers (can be changed here) ---
+    let transactions = [
+      {amount: 500, division: "ASO/DO", date: "2026-03-01"},
+      {amount: 300, division: "BREG", date: "2026-03-02"},
+      {amount: 200, division: "DFI", date: "2026-03-03"},
+      {amount: 400, division: "INS", date: "2026-03-04"},
+      {amount: 150, division: "OAH", date: "2026-03-04"},
+      {amount: 250, division: "OCP", date: "2026-03-05"}
+    ];
+
+    // Save preloaded numbers to localStorage if empty
+    if(!localStorage.getItem('transactions')) {
+      localStorage.setItem('transactions', JSON.stringify(transactions));
+    } else {
+      transactions = JSON.parse(localStorage.getItem('transactions'));
+    }
 
     function updateDisplay() {
       let totals = {};
@@ -57,7 +75,6 @@
 
       transactions.forEach(tx => {
         totals[tx.division] += tx.amount;
-
         const li = document.createElement('li');
         li.textContent = `[${tx.date}] $${tx.amount} → ${tx.division}`;
         document.getElementById('list').appendChild(li);
@@ -73,15 +90,16 @@
     function addDonation() {
       const amount = Number(document.getElementById('amount').value);
       const division = document.getElementById('division').value;
+      const date = document.getElementById('donationDate').value;
 
       if(amount <= 0) return alert("Enter a valid amount");
       if(!division) return alert("Select a division");
+      if(!date) return alert("Select a date");
 
-      const today = new Date().toLocaleDateString();
-      transactions.push({ amount, division, date: today });
-
+      transactions.push({amount, division, date});
       document.getElementById('amount').value = '';
       document.getElementById('division').value = '';
+      document.getElementById('donationDate').value = '';
 
       updateDisplay();
     }
