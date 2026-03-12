@@ -2,94 +2,102 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Fund Tracker with Chart</title>
+  <title>Donation Tracker by Division</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 700px; margin: 50px auto; }
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; }
     h1 { text-align: center; color: #2E8B57; }
     input, select, button { padding: 5px; margin: 5px; }
     ul { list-style-type: none; padding-left: 0; }
-    li.donation { color: green; }
-    li.expense { color: red; }
+    li { margin-bottom: 4px; }
     #totals { font-weight: bold; font-size: 1.2em; margin-bottom: 20px; }
-    #chart-container { max-width: 400px; margin: auto; }
+    #chart-container { max-width: 500px; margin: 20px auto; }
   </style>
 </head>
 <body>
-  <h1>Fund Tracker</h1>
+  <h1>Donation Tracker by Division</h1>
 
   <div id="totals">
-    Total Donations: $<span id="total-donations">0</span> | 
-    Total Expenses: $<span id="total-expenses">0</span> | 
-    Balance: $<span id="balance">0</span>
+    Total Donations: $<span id="total-donations">0</span>
   </div>
 
   <input type="number" id="amount" placeholder="Amount" />
-  <select id="type">
-    <option value="donation">Donation</option>
-    <option value="expense">Expense</option>
+  <select id="division">
+    <option value="">Select Division</option>
+    <option value="ASO/DO">ASO/DO</option>
+    <option value="BREG">BREG</option>
+    <option value="DFI">DFI</option>
+    <option value="INS">INS</option>
+    <option value="OAH">OAH</option>
+    <option value="OCP">OCP</option>
+    <option value="PUC">PUC</option>
+    <option value="PVL">PVL</option>
+    <option value="RICO">RICO</option>
+    <option value="KKB">KKB</option>
+    <option value="WFC">WFC</option>
   </select>
-  <input type="text" id="desc" placeholder="Description" />
-  <button onclick="addTransaction()">Add</button>
+  <button onclick="addDonation()">Add Donation</button>
 
   <h2>Transactions</h2>
   <ul id="list"></ul>
 
   <div id="chart-container">
-    <canvas id="fundChart"></canvas>
+    <canvas id="donationChart"></canvas>
   </div>
 
   <script>
+    const divisions = ["ASO/DO","BREG","DFI","INS","OAH","OCP","PUC","PVL","RICO","KKB","WFC"];
     let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 
     function updateDisplay() {
-      let totalDonations = 0;
-      let totalExpenses = 0;
+      let totals = {};
+      divisions.forEach(div => totals[div] = 0);
+
       document.getElementById('list').innerHTML = '';
 
       transactions.forEach(tx => {
-        const li = document.createElement('li');
-        li.className = tx.type;
-        li.textContent = `${tx.type === 'donation' ? '+' : '-'} $${tx.amount} — ${tx.desc}`;
-        document.getElementById('list').appendChild(li);
+        totals[tx.division] += tx.amount;
 
-        if(tx.type === 'donation') totalDonations += tx.amount;
-        else totalExpenses += tx.amount;
+        const li = document.createElement('li');
+        li.textContent = `[${tx.date}] $${tx.amount} → ${tx.division}`;
+        document.getElementById('list').appendChild(li);
       });
 
-      const balance = totalDonations - totalExpenses;
-
+      const totalDonations = transactions.reduce((sum, tx) => sum + tx.amount, 0);
       document.getElementById('total-donations').textContent = totalDonations;
-      document.getElementById('total-expenses').textContent = totalExpenses;
-      document.getElementById('balance').textContent = balance;
 
       localStorage.setItem('transactions', JSON.stringify(transactions));
-      updateChart(totalDonations, totalExpenses);
+      updateChart(totals);
     }
 
-    function addTransaction() {
+    function addDonation() {
       const amount = Number(document.getElementById('amount').value);
-      const type = document.getElementById('type').value;
-      const desc = document.getElementById('desc').value || "No description";
+      const division = document.getElementById('division').value;
 
       if(amount <= 0) return alert("Enter a valid amount");
+      if(!division) return alert("Select a division");
 
-      transactions.push({ amount, type, desc });
+      const today = new Date().toLocaleDateString();
+      transactions.push({ amount, division, date: today });
+
       document.getElementById('amount').value = '';
-      document.getElementById('desc').value = '';
+      document.getElementById('division').value = '';
+
       updateDisplay();
     }
 
     // Chart.js setup
-    const ctx = document.getElementById('fundChart').getContext('2d');
-    const fundChart = new Chart(ctx, {
+    const ctx = document.getElementById('donationChart').getContext('2d');
+    const donationChart = new Chart(ctx, {
       type: 'pie',
       data: {
-        labels: ['Donations', 'Expenses'],
+        labels: divisions,
         datasets: [{
-          label: 'Fund',
-          data: [0, 0],
-          backgroundColor: ['#2E8B57', '#FF4C4C'],
+          label: 'Donations by Division',
+          data: new Array(divisions.length).fill(0),
+          backgroundColor: [
+            '#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40','#66FF66','#FF66B2','#B266FF','#66FFFF','#FF6666'
+          ],
         }]
       },
       options: {
@@ -98,9 +106,9 @@
       }
     });
 
-    function updateChart(donations, expenses) {
-      fundChart.data.datasets[0].data = [donations, expenses];
-      fundChart.update();
+    function updateChart(totals) {
+      donationChart.data.datasets[0].data = divisions.map(div => totals[div]);
+      donationChart.update();
     }
 
     updateDisplay();
