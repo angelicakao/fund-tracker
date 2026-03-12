@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Fund Tracker</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; }
+    h1 { text-align: center; color: #2E8B57; }
+    input, select, button { padding: 5px; margin: 5px; }
+    ul { list-style-type: none; padding-left: 0; }
+    li.donation { color: green; }
+    li.expense { color: red; }
+    #balance { font-weight: bold; font-size: 1.2em; }
+  </style>
+</head>
+<body>
+  <h1>Fund Tracker</h1>
+
+  <p>Total Balance: $<span id="balance">0</span></p>
+
+  <input type="number" id="amount" placeholder="Amount" />
+  <select id="type">
+    <option value="donation">Donation</option>
+    <option value="expense">Expense</option>
+  </select>
+  <input type="text" id="desc" placeholder="Description" />
+  <button onclick="addTransaction()">Add</button>
+
+  <h2>Transactions</h2>
+  <ul id="list"></ul>
+
+  <script>
+    let balance = 0;
+    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+    function updateDisplay() {
+      document.getElementById('list').innerHTML = '';
+      balance = 0;
+      transactions.forEach(tx => {
+        const li = document.createElement('li');
+        li.className = tx.type;
+        li.textContent = `${tx.type === 'donation' ? '+' : '-'} $${tx.amount} — ${tx.desc}`;
+        document.getElementById('list').appendChild(li);
+        balance += tx.type === 'donation' ? tx.amount : -tx.amount;
+      });
+      document.getElementById('balance').textContent = balance;
+      localStorage.setItem('transactions', JSON.stringify(transactions));
+    }
+
+    function addTransaction() {
+      const amount = Number(document.getElementById('amount').value);
+      const type = document.getElementById('type').value;
+      const desc = document.getElementById('desc').value || "No description";
+
+      if (amount <= 0) return alert("Enter a valid amount");
+
+      transactions.push({ amount, type, desc });
+      document.getElementById('amount').value = '';
+      document.getElementById('desc').value = '';
+      updateDisplay();
+    }
+
+    updateDisplay();
+  </script>
+</body>
+</html>
